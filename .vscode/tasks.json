@@ -3,13 +3,21 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
-		{
-			"label": "hello",
-			"type":"shell",
-			"options":{
-					"cwd":"hello"
+			{
+				"label": "hello",
+				"type":"shell",
+				"options":{
+						"cwd":"hello"
+				},
+				"command":"clisp main.lisp"
 			},
-			"command":"clisp main.lisp"
-		},
+			{
+				"label": "tokenize",
+				"type":"shell",
+				"options":{
+						"cwd":"tokenize"
+				},
+				"command":"clisp main.lisp"
+			},
     ]
 }
