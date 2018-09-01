@@ -4,8 +4,7 @@
 (defun not-eq(a b)
    (not (eq a b)))
 
-(defstruct word (chars (list)) (next nil) (undefined nil))
-(defstruct token (source nil) (start -1) (end -1))
+(defstruct segment (chars (list)) (next nil) (undefined nil))
 
 (defun debug-print(a)
    (princ ": ")
@@ -19,8 +18,8 @@
          (setf c (car tail))
          (setf tail (cdr tail))
          (incf len)
-         (push e buf))  (make-word :chars (nreverse buf)
-                                   :next (make-word :chars (push c tail))) ))
+         (push e buf))  (make-segment :chars (nreverse buf)
+                                   :next (make-segment :chars (push c tail))) ))
 
 (defun read-identifier(source)
    (read-while source #'isident))
@@ -31,21 +30,21 @@
 (defmacro defun-read-once(name a)
     `(defun ,name(source)
         (if (char= ,a (car source))
-            (make-word :chars (list (car source))
-                       :next (make-word :chars (cdr source)))
-            (make-word :chars nil
-                       :next (make-word :chars source)))))
+            (make-segment :chars (list (car source))
+                       :next (make-segment :chars (cdr source)))
+            (make-segment :chars nil
+                       :next (make-segment :chars source)))))
 
 (defmacro defun-read-fusion(name a b)
    `(defun ,name(source)
-       (let* ((al (funcall ,a source)) (ala (word-chars al)) (ald (word-next al)))
+       (let* ((al (funcall ,a source)) (ala (segment-chars al)) (ald (segment-next al)))
           (if ala
-             (let* ((bl (funcall ,b  (word-chars ald))) (bla (word-chars bl)) (bld (word-next bl)))
-                (make-word :chars (append ala bla)
-                           :next (make-word :chars bld))
+             (let* ((bl (funcall ,b  (segment-chars ald))) (bla (segment-chars bl)) (bld (segment-next bl)))
+                (make-segment :chars (append ala bla)
+                           :next (make-segment :chars bld))
              )
-             (make-word :chars nil
-                        :next (make-word :chars ald)) ))))
+             (make-segment :chars nil
+                        :next (make-segment :chars ald)) ))))
 
 (defun test-lex(source body)
    (let ((li (funcall body (coerce source 'list)) ))
@@ -98,31 +97,33 @@
 (defun read-lex-one(source readers)
    (if readers
       (let ((ca (funcall (car readers) source)))
-         (if (word-chars ca)
+         (if (segment-chars ca)
              ca
              (read-lex-one source (cdr readers))))
-      (make-word)))
+      (make-segment)))
 
 (defun read-lex-all(source readers)
    (let ((buf (list)))
       (loop while source do
          (let ((ca (read-lex-one source readers)))
-            (if (not-eq (word-chars ca) nil)
+            (if (not-eq (segment-chars ca) nil)
                 (progn
                    (push ca buf)
-                   (setf source (word-chars (word-next ca))))
+                   (setf source (segment-chars (segment-next ca))))
                 (progn
-                   (let ((word (make-word)))
-                      (setf (word-undefined word) t)
-                      (push (car source) (word-chars word))
-                      (push word buf)
+                   (let ((segment (make-segment)))
+                      (setf (segment-undefined segment) t)
+                      (push (car source) (segment-chars segment))
+                      (push segment buf)
                       (setf source (cdr source))
                       ))
             )))
     (nreverse buf)))
 
 (time
-   (with-open-file (file "sample_lex.text" :direction :output)
+   (with-open-file (file "sample_lex.text" :direction :output
+                                           :if-exists :overwrite
+                                           :if-does-not-exist :create)
    (let ((li (read-lex-all (coerce (read-all-text "sample.text") 'list) *readers*)))
-      (dolist (e (remove-if (lambda (e) (word-undefined e)) li))
-         (format file "~A~%" (concatenate 'string (word-chars e)))))))
+      (dolist (e (remove-if (lambda (e) (segment-undefined e)) li))
+         (format file "~A~%" (concatenate 'string (segment-chars e)))))))
