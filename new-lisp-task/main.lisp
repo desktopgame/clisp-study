@@ -51,6 +51,6 @@
                              (princ "}")
                              (print-commaln)))
           (print-with-tab (lambda ()
-                             (print-pair "command" "clisp main.lisp")))
+                             (print-pair "command" "ros -l main.lisp")))
           (format t "~%},"))
    ))

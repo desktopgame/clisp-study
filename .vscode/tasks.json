@@ -9,7 +9,7 @@
 				"options":{
 						"cwd":"hello"
 				},
-				"command":"clisp main.lisp"
+				"command":"ros -l main.lisp"
 			},
 			{
 				"label": "tokenize",
@@ -17,7 +17,7 @@
 				"options":{
 						"cwd":"tokenize"
 				},
-				"command":"clisp main.lisp"
+				"command":"ros -l main.lisp"
 			},
     ]
 }
