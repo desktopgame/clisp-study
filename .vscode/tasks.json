@@ -27,5 +27,37 @@
 				},
 				"command":"ros -l main.lisp"
 			},
+			{
+				"label": "new-local-project",
+				"type":"shell",
+				"options":{
+						"cwd":"new-local-project"
+				},
+				"command":"ros -l main.lisp"
+			},
+			{
+				"label": "move-local-project",
+				"type":"shell",
+				"options":{
+						"cwd":"move-local-project"
+				},
+				"command":"ros -l main.lisp"
+			},
+			{
+				"label": "update-index-project",
+				"type":"shell",
+				"options":{
+						"cwd":"update-index-project"
+				},
+				"command":"ros -l main.lisp"
+			},
+			{
+				"label": "delete-local-project",
+				"type":"shell",
+				"options":{
+						"cwd":"delete-local-project"
+				},
+				"command":"ros -l main.lisp"
+			},
     ]
 }
