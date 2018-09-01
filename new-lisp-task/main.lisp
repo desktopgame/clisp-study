@@ -29,7 +29,7 @@
 (defun print-commaln()
    (format t ",~%"))
 
-(let ((name (nth 0 *args*)))
+(let ((name (read)))
    (if (eq name nil)
        (princ "no arguments")
        (progn
