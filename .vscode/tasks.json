@@ -19,5 +19,13 @@
 				},
 				"command":"ros -l main.lisp"
 			},
+			{
+				"label": "qltest",
+				"type":"shell",
+				"options":{
+						"cwd":"qltest"
+				},
+				"command":"ros -l main.lisp"
+			},
     ]
 }
