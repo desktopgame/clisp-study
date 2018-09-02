@@ -59,5 +59,13 @@
 				},
 				"command":"ros -l main.lisp"
 			},
+			{
+				"label": "string",
+				"type":"shell",
+				"options":{
+						"cwd":"string"
+				},
+				"command":"ros -l main.lisp"
+			},
     ]
 }
