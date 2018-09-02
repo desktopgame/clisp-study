@@ -13,11 +13,11 @@
 (defparameter *semi-colon* #\;)
 (defparameter *dot* #\.)
 
+(defun isalpha (char) (or (char<= #\A char #\Z) (char<= #\a char #\z)))
+
 (defun isspace (char) (case char ((#\Space #\Return #\Newline #\Tab) t)))
 
 (defun isident(char) (or (isalpha char) (char= #\_ char)))
-
-(defun isalpha (char) (or (char<= #\A char #\Z) (char<= #\a char #\z)))
 
 (defun isdigit (char) (char<= #\0 char #\9))
 

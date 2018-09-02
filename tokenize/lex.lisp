@@ -8,11 +8,12 @@
    (princ a)
    (format t "~%"))
 
+
 (defun read-while(source cond)
    "cond に source の先頭から一文字ずつ文字を与えて、
     t を返す限り文字列をバッファします。
     t 以外の値が返されると、その時点のバッファと source から segment を作成して返します。"
-   (let ((c (car source)) (tail (cdr source)) (buf '()) (len 0))
+   (let ((c (car source)) (tail (cdr source)) (buf '()) (len 0) (e nil))
       (loop while (and (not-eq c nil) (funcall cond c)) do
          (setf e c)
          (setf c (car tail))
@@ -79,9 +80,25 @@
 (defmacro defun-read-string(name word)
     "引数を list へ変換して、defun-read-word へ渡すマクロです。"
    `(defun-read-word ,name (coerce ,word 'list)))
+#|
+(defun defun-readers(patterns)
+   (let ((ret (list)))
+      (dolist (e patterns)
+         (unless (listp e)
+            (error 'simple-errror
+              :format-control "readers contain of not list"))
+         (princ e)
+         (format t "~%")
+      )))
 
+(defun-readers '(
+   '("hoge" :hoge)
+   '("foo" :foo)
+   '("par" :par)
+   ))
+|#
 ;readerの一覧を定義する
-(setf *readers* (list))
+(defparameter *readers* (list))
 (defun reader-register(reader)
    (push reader *readers*))
 
