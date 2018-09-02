@@ -88,8 +88,7 @@ calc
 class
 Scanner
 {
-public
-:
+public:
 property
 String
 source
@@ -204,8 +203,7 @@ Undef
 class
 Token
 {
-public
-:
+public:
 def
 new
 (
@@ -250,8 +248,7 @@ defget
 class
 Tokenizer
 {
-public
-:
+public:
 def
 new
 (
@@ -548,8 +545,7 @@ Node
 interface
 Node
 {
-public
-:
+public:
 def
 eval
 (
@@ -563,8 +559,7 @@ ValueNode
 :
 Node
 {
-public
-:
+public:
 def
 new
 (
@@ -598,8 +593,7 @@ value
 interface
 Operator
 {
-public
-:
+public:
 def
 getAssocType
 (
@@ -622,8 +616,7 @@ BinaryOperatorNode
 Node
 Operator
 {
-public
-:
+public:
 def
 new
 (
@@ -671,8 +664,7 @@ UnaryOperatorNode
 :
 Node
 {
-public
-:
+public:
 def
 new
 (
@@ -705,8 +697,7 @@ AdditiveOperator
 :
 BinaryOperatorNode
 {
-public
-:
+public:
 def
 new
 (
@@ -774,8 +765,7 @@ SubtractOperator
 :
 BinaryOperatorNode
 {
-public
-:
+public:
 def
 new
 (
@@ -843,8 +833,7 @@ MultiplyOperator
 :
 BinaryOperatorNode
 {
-public
-:
+public:
 def
 new
 (
@@ -912,8 +901,7 @@ DivideOperator
 :
 BinaryOperatorNode
 {
-public
-:
+public:
 def
 new
 (
@@ -981,8 +969,7 @@ ModOperator
 :
 BinaryOperatorNode
 {
-public
-:
+public:
 def
 new
 (
@@ -1048,8 +1035,7 @@ return
 class
 CalcUtility
 {
-public
-:
+public:
 def
 static
 tokenToAssoc
@@ -1952,6 +1938,12 @@ pop
 (
 )
 .
+eval
+(
+)
+)
+;
+
 eval
 (
 )

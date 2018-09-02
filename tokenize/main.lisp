@@ -12,6 +12,9 @@
    (format t "~%"))
 
 (defun read-while(source cond)
+   "cond に source の先頭から一文字ずつ文字を与えて、
+    t を返す限り文字列をバッファします。
+    t 以外の値が返されると、その時点のバッファと source から segment を作成して返します。"
    (let ((c (car source)) (tail (cdr source)) (buf '()) (len 0))
       (loop while (and (not-eq c nil) (funcall cond c)) do
          (setf e c)
@@ -22,12 +25,18 @@
                                    :next (make-segment :chars (push c tail))) ))
 
 (defun read-identifier(source)
+   "read-while の カバー関数です。
+    文字が アルファベット で有る限りバッファします。"
    (read-while source #'isident))
 
 (defun read-digits(source)
+   "read-while の カバー関数です。
+    文字が 数字 で有る限りバッファします。"
    (read-while source #'isdigit))
 
 (defmacro defun-read-once(name a)
+   "`一文字だけ読み取って、それが a と同じなら segment を返す`
+    関数を定義するマクロです。"
     `(defun ,name(source)
         (if (char= ,a (car source))
             (make-segment :chars (list (car source))
@@ -36,6 +45,8 @@
                        :next (make-segment :chars source)))))
 
 (defmacro defun-read-fusion(name a b)
+   "`a の戻り値 seg-a を入力として b を呼び出し、
+    両方の chars を連結した新しい segment を返す` 関数を定義するマクロです。"
    `(defun ,name(source)
        (let* ((al (funcall ,a source)) (ala (segment-chars al)) (ald (segment-next al)))
           (if ala
@@ -45,6 +56,32 @@
              )
              (make-segment :chars nil
                         :next (make-segment :chars ald)) ))))
+
+
+(defun read-word(source word)
+   "source から一文字ずつ読み取って、 word と前方一致する限りそれを続行します。
+    前方一致が途絶えた、あるいは完全に一致することが確認された場合には
+    その時点での残りの文字列を返します。"
+   (if word
+       (if (char= (car source) (car word))
+           (read-word (cdr source) (cdr word))
+           source)
+        source))
+
+(defmacro defun-read-word(name word)
+   "`word という文字列との前方一致によって segment を返す` 関数を定義するマクロです。"
+   `(defun ,name(source)
+       (let ((tail (read-word source ,word)))
+          (if (= (+ (length ,word) (length tail)) (length source))
+              (make-segment :chars ,word
+                            :next (make-segment :chars tail))
+              (make-segment :chars nil
+                            :next (make-segment :chars source))
+          ))))
+
+(defmacro defun-read-string(name word)
+    "引数を list へ変換して、defun-read-word へ渡すマクロです。"
+   `(defun-read-word ,name (coerce ,word 'list)))
 
 (defun test-lex(source body)
    (let ((li (funcall body (coerce source 'list)) ))
@@ -73,8 +110,10 @@
 (defun-read-once read-semi-colon *semi-colon*)
 (defun-read-once read-dot *dot*)
 (defun-read-fusion read-ident+digit #'read-identifier #'read-digits)
+(defun-read-string read-public "public:")
 
 (reader-register #'read-identifier)
+(reader-register #'read-public)
 (reader-register #'read-digits)
 (reader-register #'read-left-paren)
 (reader-register #'read-right-paren)
