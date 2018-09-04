@@ -1,1945 +1,4551 @@
-/
-/
-https
-:
-/
-/
-ja
-.
-wikipedia
-.
-org
-/
-wiki
-/
-%
-E
-6
-%
-93
-%
-8
-D
-%
-E
-8
-%
-BB
-%
-8
-A
-%
-E
-5
-%
-A
-0
-%
-B
-4
-%
-E
-3
-%
-82
-%
-A
-2
-%
-E
-3
-%
-83
-%
-AB
-%
-E
-3
-%
-82
-%
-B
-4
-%
-E
-3
-%
-83
-%
-AA
-%
-E
-3
-%
-82
-%
-BA
-%
-E
-3
-%
-83
-%
-A
-0
-namespace
-calc
-{
-class
-Scanner
-{
-public:
-property
-String
-source
-{
-private
-defset
-;
-defget
-;
-}
-property
-Int
-offset
-{
-defset
-;
-defget
-;
-}
-def
-new
-(
-String
-source
-)
-{
-this
-.
-source
-source
-;
-this
-.
-offset
-0
-;
-}
-def
-ready
-(
-)
--
-Bool
-{
-return
-offset
-source
-.
-length
-(
-)
-;
-}
-def
-ungetc
-(
-)
--
-Void
-{
-offset
--
-1
-;
-}
-def
-getc
-(
-)
--
-Char
-{
-var
-ret
-source
-.
-charAt
-(
-offset
-)
-;
-offset
-+
-1
-;
-return
-ret
-;
-}
-}
-enum
-TokenId
-{
-Value
-Add
-Sub
-Mul
-Div
-Mod
-LBrace
-RBrace
-Space
-Undef
-}
-enum
-AssocType
-{
-Left
-Right
-Undef
-}
-class
-Token
-{
-public:
-def
-new
-(
-Int
-id
-String
-source
-)
-{
-this
-.
-id
-id
-;
-this
-.
-source
-source
-;
-}
-property
-Int
-id
-{
-private
-defset
-;
-defget
-;
-}
-property
-String
-source
-{
-private
-defset
-;
-defget
-;
-}
-}
-class
-Tokenizer
-{
-public:
-def
-new
-(
-String
-source
-)
-{
-this
-.
-scanner
-new
-Scanner
-(
-source
-)
-;
-}
-def
-lex
-(
-)
--
-Vector
-Token
-{
-scanner
-.
-offset
-0
-;
-var
-ret
-new
-Vector
-Token
-(
-)
-;
-while
-(
-scanner
-.
-ready
-(
-)
-)
-{
-var
-c
-scanner
-.
-getc
-(
-)
-;
-if
-(
-c
-.
-isDigit
-(
-)
-)
-{
-var
-buf
-new
-StringBuilder
-(
-)
-;
-while
-(
-c
-.
-isDigit
-(
-)
-)
-{
-buf
-c
-;
-if
-(
-scanner
-.
-ready
-(
-)
-)
-{
-break
-;
-}
-c
-scanner
-.
-getc
-(
-)
-;
-}
-if
-(
-(
-scanner
-.
-ready
-(
-)
-)
-)
-{
-scanner
-.
-ungetc
-(
-)
-;
-}
-ret
-new
-Token
-(
-TokenId
-.
-Value
-buf
-.
-toString
-(
-)
-)
-;
-}
-elif
-(
-c
-+
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-Add
-+
-)
-;
-}
-elif
-(
-c
--
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-Sub
--
-)
-;
-}
-elif
-(
-c
-*
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-Mul
-*
-)
-;
-}
-elif
-(
-c
-/
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-Div
-/
-)
-;
-}
-elif
-(
-c
-%
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-Div
-%
-)
-;
-}
-elif
-(
-c
-(
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-LBrace
-(
-)
-;
-}
-elif
-(
-c
-)
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-RBrace
-)
-)
-;
-}
-elif
-(
-c
-)
-{
-ret
-new
-Token
-(
-TokenId
-.
-Space
-)
-;
-}
-else
-{
-ret
-new
-Token
-(
-TokenId
-.
-Undef
-)
-;
-}
-}
-}
-private
-:
-Scanner
-scanner
-;
-}
-/
-/
-Node
-interface
-Node
-{
-public:
-def
-eval
-(
-)
--
-Int
-;
-}
-class
-ValueNode
-:
-Node
-{
-public:
-def
-new
-(
-Int
-value
-)
-{
-this
-.
-value
-value
-;
-}
-def
-eval
-(
-)
--
-Int
-{
-return
-value
-;
-}
-private
-:
-Int
-value
-;
-}
-interface
-Operator
-{
-public:
-def
-getAssocType
-(
-)
--
-Int
-;
-def
-getPriority
-(
-)
--
-Int
-;
-}
-abstract
-class
-BinaryOperatorNode
-:
-Node
-Operator
-{
-public:
-def
-new
-(
-Node
-left
-Node
-right
-)
-{
-this
-.
-left
-left
-;
-this
-.
-right
-right
-;
-}
-property
-Node
-left
-{
-private
-defset
-;
-defget
-;
-}
-property
-Node
-right
-{
-private
-defset
-;
-defget
-;
-}
-}
-abstract
-class
-UnaryOperatorNode
-:
-Node
-{
-public:
-def
-new
-(
-Node
-a
-)
-{
-this
-.
-a
-a
-;
-}
-property
-Node
-a
-{
-private
-defset
-;
-defget
-;
-}
-}
-/
-/
-operator
-class
-AdditiveOperator
-:
-BinaryOperatorNode
-{
-public:
-def
-new
-(
-Node
-left
-Node
-right
-)
-:
-super
-(
-left
-right
-)
-{
-}
-def
-eval
-(
-)
--
-Int
-{
-return
-left
-.
-eval
-(
-)
-+
-right
-.
-eval
-(
-)
-;
-}
-def
-getAssocType
-(
-)
--
-Int
-{
-return
-AssocType
-.
-Left
-;
-}
-def
-getPriority
-(
-)
--
-Int
-{
-return
-2
-;
-}
-}
-class
-SubtractOperator
-:
-BinaryOperatorNode
-{
-public:
-def
-new
-(
-Node
-left
-Node
-right
-)
-:
-super
-(
-left
-right
-)
-{
-}
-def
-eval
-(
-)
--
-Int
-{
-return
-left
-.
-eval
-(
-)
--
-right
-.
-eval
-(
-)
-;
-}
-def
-getAssocType
-(
-)
--
-Int
-{
-return
-AssocType
-.
-Left
-;
-}
-def
-getPriority
-(
-)
--
-Int
-{
-return
-2
-;
-}
-}
-class
-MultiplyOperator
-:
-BinaryOperatorNode
-{
-public:
-def
-new
-(
-Node
-left
-Node
-right
-)
-:
-super
-(
-left
-right
-)
-{
-}
-def
-eval
-(
-)
--
-Int
-{
-return
-left
-.
-eval
-(
-)
-*
-right
-.
-eval
-(
-)
-;
-}
-def
-getAssocType
-(
-)
--
-Int
-{
-return
-AssocType
-.
-Left
-;
-}
-def
-getPriority
-(
-)
--
-Int
-{
-return
-3
-;
-}
-}
-class
-DivideOperator
-:
-BinaryOperatorNode
-{
-public:
-def
-new
-(
-Node
-left
-Node
-right
-)
-:
-super
-(
-left
-right
-)
-{
-}
-def
-eval
-(
-)
--
-Int
-{
-return
-left
-.
-eval
-(
-)
-/
-right
-.
-eval
-(
-)
-;
-}
-def
-getAssocType
-(
-)
--
-Int
-{
-return
-AssocType
-.
-Left
-;
-}
-def
-getPriority
-(
-)
--
-Int
-{
-return
-3
-;
-}
-}
-class
-ModOperator
-:
-BinaryOperatorNode
-{
-public:
-def
-new
-(
-Node
-left
-Node
-right
-)
-:
-super
-(
-left
-right
-)
-{
-}
-def
-eval
-(
-)
--
-Int
-{
-return
-left
-.
-eval
-(
-)
-%
-right
-.
-eval
-(
-)
-;
-}
-def
-getAssocType
-(
-)
--
-Int
-{
-return
-AssocType
-.
-Left
-;
-}
-def
-getPriority
-(
-)
--
-Int
-{
-return
-3
-;
-}
-}
-class
-CalcUtility
-{
-public:
-def
-static
-tokenToAssoc
-(
-Int
-id
-)
--
-Int
-{
-if
-(
-id
-TokenId
-.
-Add
-)
-{
-return
-AssocType
-.
-Left
-;
-}
-elif
-(
-id
-TokenId
-.
-Sub
-)
-{
-return
-AssocType
-.
-Left
-;
-}
-elif
-(
-id
-TokenId
-.
-Mul
-)
-{
-return
-AssocType
-.
-Left
-;
-}
-elif
-(
-id
-TokenId
-.
-Div
-)
-{
-return
-AssocType
-.
-Left
-;
-}
-elif
-(
-id
-TokenId
-.
-Mod
-)
-{
-return
-AssocType
-.
-Left
-;
-}
-else
-{
-return
-AssocType
-.
-Undef
-;
-}
-}
-def
-static
-tokenToPriority
-(
-Int
-id
-)
--
-Int
-{
-if
-(
-id
-TokenId
-.
-Add
-)
-{
-return
-2
-;
-}
-elif
-(
-id
-TokenId
-.
-Sub
-)
-{
-return
-2
-;
-}
-elif
-(
-id
-TokenId
-.
-Mul
-)
-{
-return
-3
-;
-}
-elif
-(
-id
-TokenId
-.
-Div
-)
-{
-return
-3
-;
-}
-elif
-(
-id
-TokenId
-.
-Mod
-)
-{
-return
-3
-;
-}
-else
-{
-return
--
-1
-;
-}
-}
-def
-static
-tokenIsOperator
-(
-Int
-id
-)
--
-Bool
-{
-return
-(
-(
-id
-calc
-:
-:
-TokenId
-.
-Add
-)
-|
-|
-(
-id
-calc
-:
-:
-TokenId
-.
-Sub
-)
-|
-|
-(
-id
-calc
-:
-:
-TokenId
-.
-Mul
-)
-|
-|
-(
-id
-calc
-:
-:
-TokenId
-.
-Div
-)
-|
-|
-(
-id
-calc
-:
-:
-TokenId
-.
-Mod
-)
-)
-;
-}
-def
-static
-tokenToBiOp
-(
-Int
-id
-Node
-a
-Node
-b
-)
--
-BinaryOperatorNode
-{
-if
-(
-id
-TokenId
-.
-Add
-)
-{
-return
-new
-AdditiveOperator
-(
-a
-b
-)
-;
-}
-elif
-(
-id
-TokenId
-.
-Sub
-)
-{
-return
-new
-SubtractOperator
-(
-a
-b
-)
-;
-}
-elif
-(
-id
-TokenId
-.
-Mul
-)
-{
-return
-new
-MultiplyOperator
-(
-a
-b
-)
-;
-}
-elif
-(
-id
-TokenId
-.
-Div
-)
-{
-return
-new
-DivideOperator
-(
-a
-b
-)
-;
-}
-elif
-(
-id
-TokenId
-.
-Mod
-)
-{
-return
-new
-ModOperator
-(
-a
-b
-)
-;
-}
-else
-{
-return
-null
-;
-}
-}
-private
-:
-def
-new
-(
-)
-{
-}
-}
-}
-var
-output
-new
-Vector
-calc
-:
-:
-Token
-(
-)
-;
-var
-stack
-new
-Vector
-calc
-:
-:
-Token
-(
-)
-;
-var
-line
-Console
-.
-readLine
-(
-)
-;
-var
-tokenizer
-new
-calc
-:
-:
-Tokenizer
-(
-line
-)
-;
-var
-tokens
-tokenizer
-.
-lex
-(
-)
-;
-var
-iter
-tokens
-.
-iterate
-(
-)
-;
-while
-(
-iter
-.
-moveNext
-(
-)
-)
-{
-var
-e
-iter
-.
-current
-(
-)
-;
-if
-(
-e
-.
-id
-calc
-:
-:
-TokenId
-.
-Space
-)
-{
-continue
-;
-}
-elif
-(
-e
-.
-id
-calc
-:
-:
-TokenId
-.
-Undef
-)
-{
-printLine
-(
-error
-)
-;
-break
-;
-}
-elif
-(
-e
-.
-id
-calc
-:
-:
-TokenId
-.
-Value
-)
-{
-output
-e
-;
-}
-elif
-(
-calc
-:
-:
-CalcUtility
-.
-tokenIsOperator
-(
-e
-.
-id
-)
-)
-{
-var
-eAssoc
-calc
-:
-:
-CalcUtility
-.
-tokenToAssoc
-(
-e
-.
-id
-)
-;
-var
-ePrio
-calc
-:
-:
-CalcUtility
-.
-tokenToPriority
-(
-e
-.
-id
-)
-;
-while
-(
-stack
-.
-length
-(
-)
-0
-)
-{
-var
-sn
-stack
-.
-top
-(
-)
-;
-var
-sAssoc
-calc
-:
-:
-CalcUtility
-.
-tokenToAssoc
-(
-sn
-.
-id
-)
-;
-var
-sPrio
-calc
-:
-:
-CalcUtility
-.
-tokenToPriority
-(
-sn
-.
-id
-)
-;
-if
-(
-(
-(
-calc
-:
-:
-CalcUtility
-.
-tokenIsOperator
-(
-sn
-.
-id
-)
-)
-&
-&
-(
-(
-(
-eAssoc
-calc
-:
-:
-AssocType
-.
-Left
-)
-&
-&
-(
-ePrio
-sPrio
-)
-)
-|
-|
-(
-ePrio
-sPrio
-)
-)
-)
-)
-{
-output
-sn
-;
-stack
-.
-pop
-(
-)
-;
-}
-else
-{
-break
-;
-}
-}
-/
-/
-output
-sn
-;
-stack
-e
-;
-}
-elif
-(
-e
-.
-id
-calc
-:
-:
-TokenId
-.
-LBrace
-)
-{
-output
-e
-;
-}
-elif
-(
-e
-.
-id
-calc
-:
-:
-TokenId
-.
-RBrace
-)
-{
-while
-(
-stack
-.
-length
-(
-)
-0
-)
-{
-var
-s
-stack
-.
-pop
-(
-)
-;
-if
-(
-s
-.
-id
-calc
-:
-:
-TokenId
-.
-LBrace
-)
-{
-break
-;
-}
-}
-}
-elif
-(
-e
-.
-id
-calc
-:
-:
-TokenId
-.
-Space
-)
-{
-continue
-;
-}
-}
-while
-(
-stack
-.
-length
-(
-)
-0
-)
-{
-var
-s
-2
-stack
-.
-pop
-(
-)
-;
-if
-(
-(
-s
-2
-.
-id
-calc
-:
-:
-TokenId
-.
-LBrace
-)
-|
-|
-(
-s
-2
-.
-id
-calc
-:
-:
-TokenId
-.
-RBrace
-)
-)
-{
-printLine
-(
-error
-)
-;
-break
-;
-}
-output
-s
-2
-;
-}
-var
-oIter
-output
-.
-iterate
-(
-)
-;
-var
-nodeStack
-new
-Vector
-calc
-:
-:
-Node
-(
-)
-;
-while
-(
-oIter
-.
-moveNext
-(
-)
-)
-{
-var
-o
-oIter
-.
-current
-(
-)
-;
-if
-(
-o
-.
-id
-calc
-:
-:
-TokenId
-.
-Value
-)
-{
-nodeStack
-new
-calc
-:
-:
-ValueNode
-(
-o
-.
-source
-.
-toInt
-(
-)
-)
-;
-}
-elif
-(
-calc
-:
-:
-CalcUtility
-.
-tokenIsOperator
-(
-o
-.
-id
-)
-)
-{
-nodeStack
-calc
-:
-:
-CalcUtility
-.
-tokenToBiOp
-(
-o
-.
-id
-nodeStack
-.
-pop
-(
-)
-nodeStack
-.
-pop
-(
-)
-)
-;
-}
-}
-print
-(
-)
-;
-printLine
-(
-nodeStack
-.
-pop
-(
-)
-.
-eval
-(
-)
-)
-;
+/ NIL
+/ NIL
+https IDENT
+: NIL
+/ NIL
+/ NIL
+ja IDENT
+. NIL
+wikipedia IDENT
+. NIL
+org IDENT
+/ NIL
+wiki IDENT
+/ NIL
+% NIL
+E IDENT
+6 DIGIT
+% NIL
+93 DIGIT
+% NIL
+8 DIGIT
+D IDENT
+% NIL
+E IDENT
+8 DIGIT
+% NIL
+BB IDENT
+% NIL
+8 DIGIT
+A IDENT
+% NIL
+E IDENT
+5 DIGIT
+% NIL
+A IDENT
+0 DIGIT
+% NIL
+B IDENT
+4 DIGIT
+% NIL
+E IDENT
+3 DIGIT
+% NIL
+82 DIGIT
+% NIL
+A IDENT
+2 DIGIT
+% NIL
+E IDENT
+3 DIGIT
+% NIL
+83 DIGIT
+% NIL
+AB IDENT
+% NIL
+E IDENT
+3 DIGIT
+% NIL
+82 DIGIT
+% NIL
+B IDENT
+4 DIGIT
+% NIL
+E IDENT
+3 DIGIT
+% NIL
+83 DIGIT
+% NIL
+AA IDENT
+% NIL
+E IDENT
+3 DIGIT
+% NIL
+82 DIGIT
+% NIL
+BA IDENT
+% NIL
+E IDENT
+3 DIGIT
+% NIL
+83 DIGIT
+% NIL
+A IDENT
+0 DIGIT
+
+ NIL
+namespace IDENT
+  NIL
+calc IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+Scanner IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+String IDENT
+  NIL
+source IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+private IDENT
+  NIL
+defset IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+defget IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+Int IDENT
+  NIL
+offset IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+defset IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+defget IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+String IDENT
+  NIL
+source IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+source IDENT
+  NIL
+= NIL
+  NIL
+source IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+offset IDENT
+  NIL
+= NIL
+  NIL
+0 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+ready IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Bool IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+offset IDENT
+  NIL
+< NIL
+  NIL
+source IDENT
+. NIL
+length IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+ungetc IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Void IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+offset IDENT
+  NIL
+- NIL
+= NIL
+  NIL
+1 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getc IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Char IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+ret IDENT
+  NIL
+= NIL
+  NIL
+source IDENT
+. NIL
+charAt IDENT
+( NIL
+offset IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+offset IDENT
+  NIL
++ NIL
+= NIL
+  NIL
+1 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+ret IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+enum IDENT
+  NIL
+TokenId IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+Value IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Add IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Sub IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Mul IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Div IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Mod IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+LBrace IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+RBrace IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Space IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Undef IDENT
+, NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+enum IDENT
+  NIL
+AssocType IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+Left IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Right IDENT
+, NIL
+
+ NIL
+	 NIL
+	 NIL
+Undef IDENT
+, NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+Token IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Int IDENT
+  NIL
+id IDENT
+, NIL
+  NIL
+String IDENT
+  NIL
+source IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+  NIL
+id IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+source IDENT
+  NIL
+= NIL
+  NIL
+source IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+Int IDENT
+  NIL
+id IDENT
+  NIL
+{ NIL
+  NIL
+private IDENT
+  NIL
+defset IDENT
+; NIL
+  NIL
+defget IDENT
+; NIL
+  NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+String IDENT
+  NIL
+source IDENT
+  NIL
+{ NIL
+  NIL
+private IDENT
+  NIL
+defset IDENT
+; NIL
+  NIL
+defget IDENT
+; NIL
+  NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+Tokenizer IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+String IDENT
+  NIL
+source IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+scanner IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+Scanner IDENT
+( NIL
+source IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+lex IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Vector IDENT
+[ NIL
+Token IDENT
+] NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+scanner IDENT
+. NIL
+offset IDENT
+  NIL
+= NIL
+  NIL
+0 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+ret IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+Vector IDENT
+[ NIL
+Token IDENT
+] NIL
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+while IDENT
+( NIL
+scanner IDENT
+. NIL
+ready IDENT
+( NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+c IDENT
+  NIL
+= NIL
+  NIL
+scanner IDENT
+. NIL
+getc IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+c IDENT
+. NIL
+isDigit IDENT
+( NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+buf IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+StringBuilder IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+while IDENT
+( NIL
+c IDENT
+. NIL
+isDigit IDENT
+( NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+buf IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+c IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+! NIL
+scanner IDENT
+. NIL
+ready IDENT
+( NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+  NIL
+break IDENT
+; NIL
+  NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+c IDENT
+  NIL
+= NIL
+  NIL
+scanner IDENT
+. NIL
+getc IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+( NIL
+scanner IDENT
+. NIL
+ready IDENT
+( NIL
+) NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+scanner IDENT
+. NIL
+ungetc IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Value IDENT
+, NIL
+  NIL
+buf IDENT
+. NIL
+toString IDENT
+( NIL
+) NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
++ NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Add IDENT
+, NIL
+  NIL
+" NIL
++ NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+- NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Sub IDENT
+, NIL
+  NIL
+" NIL
+- NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+* NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Mul IDENT
+, NIL
+  NIL
+" NIL
+* NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+/ NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Div IDENT
+, NIL
+  NIL
+" NIL
+/ NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+% NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Div IDENT
+, NIL
+  NIL
+" NIL
+% NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+( NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+LBrace IDENT
+, NIL
+  NIL
+" NIL
+( NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+) NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+RBrace IDENT
+, NIL
+  NIL
+" NIL
+) NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+  NIL
+( NIL
+c IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+' NIL
+  NIL
+' NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Space IDENT
+, NIL
+  NIL
+" NIL
+  NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+else IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+ret IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+Token IDENT
+( NIL
+TokenId IDENT
+. NIL
+Undef IDENT
+, NIL
+  NIL
+" NIL
+? NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+private IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+Scanner IDENT
+  NIL
+scanner IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+/ NIL
+/ NIL
+Node IDENT
+
+ NIL
+	 NIL
+interface IDENT
+  NIL
+Node IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+ValueNode IDENT
+  NIL
+: NIL
+  NIL
+Node IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Int IDENT
+  NIL
+value IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+value IDENT
+  NIL
+= NIL
+  NIL
+value IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+value IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+private IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+Int IDENT
+  NIL
+value IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+interface IDENT
+  NIL
+Operator IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getAssocType IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getPriority IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+abstract IDENT
+  NIL
+class IDENT
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+: NIL
+  NIL
+Node IDENT
+, NIL
+  NIL
+Operator IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+left IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+right IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+left IDENT
+  NIL
+= NIL
+  NIL
+left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+right IDENT
+  NIL
+= NIL
+  NIL
+right IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+Node IDENT
+  NIL
+left IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+private IDENT
+  NIL
+defset IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+defget IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+Node IDENT
+  NIL
+right IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+private IDENT
+  NIL
+defset IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+defget IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+abstract IDENT
+  NIL
+class IDENT
+  NIL
+UnaryOperatorNode IDENT
+  NIL
+: NIL
+  NIL
+Node IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+a IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+this IDENT
+. NIL
+a IDENT
+  NIL
+= NIL
+  NIL
+a IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+property IDENT
+  NIL
+Node IDENT
+  NIL
+a IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+private IDENT
+  NIL
+defset IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+defget IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+/ NIL
+/ NIL
+operator IDENT
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+AdditiveOperator IDENT
+  NIL
+: NIL
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+left IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+right IDENT
+) NIL
+  NIL
+: NIL
+  NIL
+super IDENT
+( NIL
+left IDENT
+, NIL
+  NIL
+right IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+left IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
++ NIL
+  NIL
+right IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getAssocType IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getPriority IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+2 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+SubtractOperator IDENT
+  NIL
+: NIL
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+left IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+right IDENT
+) NIL
+  NIL
+: NIL
+  NIL
+super IDENT
+( NIL
+left IDENT
+, NIL
+  NIL
+right IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+left IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+  NIL
+right IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getAssocType IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getPriority IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+2 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+MultiplyOperator IDENT
+  NIL
+: NIL
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+left IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+right IDENT
+) NIL
+  NIL
+: NIL
+  NIL
+super IDENT
+( NIL
+left IDENT
+, NIL
+  NIL
+right IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+left IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+* NIL
+  NIL
+right IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getAssocType IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getPriority IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+3 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+DivideOperator IDENT
+  NIL
+: NIL
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+left IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+right IDENT
+) NIL
+  NIL
+: NIL
+  NIL
+super IDENT
+( NIL
+left IDENT
+, NIL
+  NIL
+right IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+left IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+/ NIL
+  NIL
+right IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getAssocType IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getPriority IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+3 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+ModOperator IDENT
+  NIL
+: NIL
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+Node IDENT
+  NIL
+left IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+right IDENT
+) NIL
+  NIL
+: NIL
+  NIL
+super IDENT
+( NIL
+left IDENT
+, NIL
+  NIL
+right IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+left IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+  NIL
+% NIL
+  NIL
+right IDENT
+. NIL
+eval IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getAssocType IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+getPriority IDENT
+( NIL
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+3 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+class IDENT
+  NIL
+CalcUtility IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+public IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+static IDENT
+  NIL
+tokenToAssoc IDENT
+( NIL
+Int IDENT
+  NIL
+id IDENT
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Add IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Sub IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Mul IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Div IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Mod IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Left IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+else IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+AssocType IDENT
+. NIL
+Undef IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+static IDENT
+  NIL
+tokenToPriority IDENT
+( NIL
+Int IDENT
+  NIL
+id IDENT
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Int IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Add IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+2 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Sub IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+2 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Mul IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+3 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Div IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+3 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Mod IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+3 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+else IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+- NIL
+1 DIGIT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+static IDENT
+  NIL
+tokenIsOperator IDENT
+( NIL
+Int IDENT
+  NIL
+id IDENT
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+Bool IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+	 NIL
+( NIL
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Add IDENT
+) NIL
+  NIL
+| NIL
+| NIL
+
+ NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Sub IDENT
+) NIL
+  NIL
+| NIL
+| NIL
+
+ NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Mul IDENT
+) NIL
+  NIL
+| NIL
+| NIL
+
+ NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Div IDENT
+) NIL
+  NIL
+| NIL
+| NIL
+
+ NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Mod IDENT
+) NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+static IDENT
+  NIL
+tokenToBiOp IDENT
+( NIL
+Int IDENT
+  NIL
+id IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+a IDENT
+, NIL
+  NIL
+Node IDENT
+  NIL
+b IDENT
+) NIL
+  NIL
+- NIL
+> NIL
+  NIL
+BinaryOperatorNode IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Add IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+new IDENT
+  NIL
+AdditiveOperator IDENT
+( NIL
+a IDENT
+, NIL
+  NIL
+b IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Sub IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+new IDENT
+  NIL
+SubtractOperator IDENT
+( NIL
+a IDENT
+, NIL
+  NIL
+b IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Mul IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+new IDENT
+  NIL
+MultiplyOperator IDENT
+( NIL
+a IDENT
+, NIL
+  NIL
+b IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Div IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+new IDENT
+  NIL
+DivideOperator IDENT
+( NIL
+a IDENT
+, NIL
+  NIL
+b IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+TokenId IDENT
+. NIL
+Mod IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+new IDENT
+  NIL
+ModOperator IDENT
+( NIL
+a IDENT
+, NIL
+  NIL
+b IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+else IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+return IDENT
+  NIL
+null IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+private IDENT
+: NIL
+
+ NIL
+	 NIL
+	 NIL
+def IDENT
+  NIL
+new IDENT
+( NIL
+) NIL
+  NIL
+{ NIL
+  NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+} NIL
+
+ NIL
+var IDENT
+  NIL
+output IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+Vector IDENT
+[ NIL
+calc IDENT
+: NIL
+: NIL
+Token IDENT
+] NIL
+( NIL
+) NIL
+; NIL
+
+ NIL
+var IDENT
+  NIL
+stack IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+Vector IDENT
+[ NIL
+calc IDENT
+: NIL
+: NIL
+Token IDENT
+] NIL
+( NIL
+) NIL
+; NIL
+
+ NIL
+var IDENT
+  NIL
+line IDENT
+  NIL
+= NIL
+  NIL
+Console IDENT
+. NIL
+readLine IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+var IDENT
+  NIL
+tokenizer IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+calc IDENT
+: NIL
+: NIL
+Tokenizer IDENT
+( NIL
+line IDENT
+) NIL
+; NIL
+
+ NIL
+var IDENT
+  NIL
+tokens IDENT
+  NIL
+= NIL
+  NIL
+tokenizer IDENT
+. NIL
+lex IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+var IDENT
+  NIL
+iter IDENT
+  NIL
+= NIL
+  NIL
+tokens IDENT
+. NIL
+iterate IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+while IDENT
+( NIL
+iter IDENT
+. NIL
+moveNext IDENT
+( NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+var IDENT
+  NIL
+e IDENT
+  NIL
+= NIL
+  NIL
+iter IDENT
+. NIL
+current IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+if IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Space IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+continue IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Undef IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+printLine IDENT
+( NIL
+" NIL
+error IDENT
+! NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+break IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Value IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+output IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+e IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenIsOperator IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+eAssoc IDENT
+  NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenToAssoc IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+ePrio IDENT
+  NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenToPriority IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+while IDENT
+( NIL
+stack IDENT
+. NIL
+length IDENT
+( NIL
+) NIL
+  NIL
+> NIL
+  NIL
+0 DIGIT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+sn IDENT
+  NIL
+= NIL
+  NIL
+stack IDENT
+. NIL
+top IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+sAssoc IDENT
+  NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenToAssoc IDENT
+( NIL
+sn IDENT
+. NIL
+id IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+sPrio IDENT
+  NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenToPriority IDENT
+( NIL
+sn IDENT
+. NIL
+id IDENT
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+( NIL
+( NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenIsOperator IDENT
+( NIL
+sn IDENT
+. NIL
+id IDENT
+) NIL
+) NIL
+  NIL
+& NIL
+& NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+( NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+eAssoc IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+AssocType IDENT
+. NIL
+Left IDENT
+) NIL
+  NIL
+& NIL
+& NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+( NIL
+ePrio IDENT
+  NIL
+< NIL
+= NIL
+  NIL
+sPrio IDENT
+) NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+	 NIL
+	 NIL
+) NIL
+  NIL
+| NIL
+| NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+( NIL
+ePrio IDENT
+  NIL
+< NIL
+  NIL
+sPrio IDENT
+) NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+) NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+) NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+output IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+sn IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+stack IDENT
+. NIL
+pop IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+  NIL
+else IDENT
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+break IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+/ NIL
+/ NIL
+output IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+sn IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+stack IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+e IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+LBrace IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+output IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+e IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+RBrace IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+while IDENT
+( NIL
+stack IDENT
+. NIL
+length IDENT
+( NIL
+) NIL
+  NIL
+> NIL
+  NIL
+0 DIGIT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+var IDENT
+  NIL
+s IDENT
+  NIL
+= NIL
+  NIL
+stack IDENT
+. NIL
+pop IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+if IDENT
+( NIL
+s IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+LBrace IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+	 NIL
+break IDENT
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+e IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Space IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+continue IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+} NIL
+
+ NIL
+while IDENT
+( NIL
+stack IDENT
+. NIL
+length IDENT
+( NIL
+) NIL
+  NIL
+> NIL
+  NIL
+0 DIGIT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+var IDENT
+  NIL
+s IDENT
+2 DIGIT
+  NIL
+= NIL
+  NIL
+stack IDENT
+. NIL
+pop IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+if IDENT
+( NIL
+( NIL
+s IDENT
+2 DIGIT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+LBrace IDENT
+) NIL
+  NIL
+| NIL
+| NIL
+
+ NIL
+	 NIL
+  NIL
+  NIL
+  NIL
+( NIL
+s IDENT
+2 DIGIT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+RBrace IDENT
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+printLine IDENT
+( NIL
+" NIL
+error IDENT
+! NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+	 NIL
+break IDENT
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+	 NIL
+output IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+s IDENT
+2 DIGIT
+; NIL
+
+ NIL
+} NIL
+
+ NIL
+var IDENT
+  NIL
+oIter IDENT
+  NIL
+= NIL
+  NIL
+output IDENT
+. NIL
+iterate IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+var IDENT
+  NIL
+nodeStack IDENT
+  NIL
+= NIL
+  NIL
+new IDENT
+  NIL
+Vector IDENT
+[ NIL
+calc IDENT
+: NIL
+: NIL
+Node IDENT
+] NIL
+( NIL
+) NIL
+; NIL
+
+ NIL
+while IDENT
+( NIL
+oIter IDENT
+. NIL
+moveNext IDENT
+( NIL
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+var IDENT
+  NIL
+o IDENT
+  NIL
+= NIL
+  NIL
+oIter IDENT
+. NIL
+current IDENT
+( NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+if IDENT
+( NIL
+o IDENT
+. NIL
+id IDENT
+  NIL
+= NIL
+= NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+TokenId IDENT
+. NIL
+Value IDENT
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+nodeStack IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+new IDENT
+  NIL
+calc IDENT
+: NIL
+: NIL
+ValueNode IDENT
+( NIL
+o IDENT
+. NIL
+source IDENT
+. NIL
+toInt IDENT
+( NIL
+) NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+} NIL
+  NIL
+elif IDENT
+( NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenIsOperator IDENT
+( NIL
+o IDENT
+. NIL
+id IDENT
+) NIL
+) NIL
+  NIL
+{ NIL
+
+ NIL
+	 NIL
+	 NIL
+nodeStack IDENT
+  NIL
+< NIL
+< NIL
+  NIL
+calc IDENT
+: NIL
+: NIL
+CalcUtility IDENT
+. NIL
+tokenToBiOp IDENT
+( NIL
+o IDENT
+. NIL
+id IDENT
+, NIL
+  NIL
+nodeStack IDENT
+. NIL
+pop IDENT
+( NIL
+) NIL
+, NIL
+  NIL
+nodeStack IDENT
+. NIL
+pop IDENT
+( NIL
+) NIL
+) NIL
+; NIL
+
+ NIL
+	 NIL
+} NIL
+
+ NIL
+} NIL
+
+ NIL
+print IDENT
+( NIL
+" NIL
+= NIL
+" NIL
+) NIL
+; NIL
+
+ NIL
+printLine IDENT
+( NIL
+nodeStack IDENT
+. NIL
+pop IDENT
+( NIL
+) NIL
+. NIL
+eval IDENT
+( NIL
+) NIL
+) NIL
+; NIL
+
+ NIL

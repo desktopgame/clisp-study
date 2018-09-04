@@ -80,23 +80,30 @@
 (defmacro defun-read-string(name word)
     "引数を list へ変換して、defun-read-word へ渡すマクロです。"
    `(defun-read-word ,name (coerce ,word 'list)))
-#|
-(defun defun-readers(patterns)
-   (let ((ret (list)))
-      (dolist (e patterns)
-         (unless (listp e)
-            (error 'simple-errror
-              :format-control "readers contain of not list"))
-         (princ e)
-         (format t "~%")
-      )))
 
-(defun-readers '(
-   '("hoge" :hoge)
-   '("foo" :foo)
-   '("par" :par)
-   ))
-|#
+(defun wrap-reader(proxy id)
+   "`proxy の戻り値の segment の segment-id を id に変更して返す`
+     ラムダを返します。"
+   (format t "~a ~a~%" (type-of proxy) (type-of id))
+   (lambda (source)
+      (let ((seg (funcall proxy source)))
+         (setf (segment-id seg) id) seg)))
+
+(defun define-reader(head tailing)
+   (let ((id (car tailing)))
+      (values (wrap-reader head id) (cdr tailing))))
+
+(defun define-readers-by(values)
+   (let ((ret (list)))
+      (loop while values do
+         (multiple-value-bind (reader tailing) (define-reader (car values) (cdr values))
+            (push reader ret)
+            (setf values tailing)
+         )) ret))
+
+(defmacro define-readers(&body elements)
+   `(define-readers-by (list ,@elements)))
+
 ;readerの一覧を定義する
 (defparameter *readers* (list))
 (defun reader-register(reader)
@@ -147,7 +154,7 @@
          (if (segment-chars ca)
              ca
              (read-lex-one source (cdr readers))))
-      (make-segment)))
+      (make-segment :id :none)))
 
 (defun read-lex-all(source readers)
    "source が空になるまで readers によって解析します。

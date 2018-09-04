@@ -1,9 +1,24 @@
-100
-+
-20
-*
-(
-3
-/
-3
-)
+100 DIGIT
+  NIL
++ NIL
+  NIL
+20 DIGIT
+  NIL
+* NIL
+  NIL
+( NIL
+3 DIGIT
+  NIL
+/ NIL
+  NIL
+3 DIGIT
+) NIL
+
+ NIL
+
+
+ NIL
+NONE
+) NONE
+
+ NONE

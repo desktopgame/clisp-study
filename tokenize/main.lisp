@@ -3,15 +3,20 @@
 (load "lex.lisp")
 (ql:quickload :cl-fad)
 
+(defparameter *oridinal_readers* (define-readers
+   #'read-identifier :ident
+   #'read-digits :digit
+))
+
 (defun lex-one(input-file output-file)
    "input-file を解析して output-file へ出力します。"
    (time
       (with-open-file (file output-file :direction :output
                                        :if-exists :overwrite
                                        :if-does-not-exist :create)
-      (let ((li (read-lex-all (coerce (read-all-text input-file) 'list) *readers*)))
-         (dolist (e (remove-if (lambda (e) (segment-undefined e)) li))
-            (format file "~A~%" (concatenate 'string (segment-chars e))))))))
+      (let ((li (read-lex-all (coerce (read-all-text input-file) 'list) *oridinal_readers*)))
+         (dolist (e li)
+            (format file "~A ~A~%" (concatenate 'string (segment-chars e)) (symbol-name (segment-id e))))))))
 
 (defun lex-test(input-dir output-dir)
    "input-dir を解析して output-dir へ出力します。"
