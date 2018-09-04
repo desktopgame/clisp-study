@@ -56,20 +56,20 @@
                         :next (make-segment :chars ald)) ))))
 
 
-(defun read-word(source word)
+(defun scan-word(source word)
    "source から一文字ずつ読み取って、 word と前方一致する限りそれを続行します。
     前方一致が途絶えた、あるいは完全に一致することが確認された場合には
     その時点での残りの文字列を返します。"
    (if word
        (if (char= (car source) (car word))
-           (read-word (cdr source) (cdr word))
+           (scan-word (cdr source) (cdr word))
            source)
         source))
 
 (defmacro defun-read-word(name word)
    "`word という文字列との前方一致によって segment を返す` 関数を定義するマクロです。"
    `(defun ,name(source)
-       (let ((tail (read-word source ,word)))
+       (let ((tail (scan-word source ,word)))
           (if (= (+ (length ,word) (length tail)) (length source))
               (make-segment :chars ,word
                             :next (make-segment :chars tail))
