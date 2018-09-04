@@ -104,48 +104,6 @@
 (defmacro define-readers(&body elements)
    `(define-readers-by (list ,@elements)))
 
-;readerの一覧を定義する
-(defparameter *readers* (list))
-(defun reader-register(reader)
-   (push reader *readers*))
-
-;デフォルトの readerを定義する
-(defun-read-once read-left-paren *left-paren*)
-(defun-read-once read-right-paren *right-paren*)
-(defun-read-once read-left-brace *left-brace*)
-(defun-read-once read-right-brace *right-brace*)
-(defun-read-once read-plus *plus*)
-(defun-read-once read-minus *minus*)
-(defun-read-once read-multiply *multiply*)
-(defun-read-once read-divide *divide*)
-(defun-read-once read-mod *mod*)
-(defun-read-once read-bit-or *bit-or*)
-(defun-read-once read-bit-and *bit-and*)
-(defun-read-once read-colon *colon*)
-(defun-read-once read-semi-colon *semi-colon*)
-(defun-read-once read-dot *dot*)
-(defun-read-fusion read-ident+digit #'read-identifier #'read-digit)
-(defun-read-string read-public "public:")
-
-(reader-register #'read-identifier)
-(reader-register #'read-public)
-(reader-register #'read-digit)
-(reader-register #'read-left-paren)
-(reader-register #'read-right-paren)
-(reader-register #'read-left-brace)
-(reader-register #'read-right-brace)
-
-(reader-register #'read-plus)
-(reader-register #'read-minus)
-(reader-register #'read-multiply)
-(reader-register #'read-divide)
-(reader-register #'read-mod)
-(reader-register #'read-bit-or)
-(reader-register #'read-bit-and)
-(reader-register #'read-colon)
-(reader-register #'read-semi-colon)
-(reader-register #'read-dot)
-
 (defun read-lex-one(source readers)
    "source に対して 一つづつ readers を適用して、
     有効な segment が返された時点でそれを戻り値とします。"
