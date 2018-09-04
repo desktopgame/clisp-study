@@ -5,7 +5,7 @@
 
 (defparameter *oridinal_readers* (define-readers
    #'read-identifier :ident
-   #'read-digits :digit
+   #'read-digit :digit
 ))
 
 (defun lex-one(input-file output-file)

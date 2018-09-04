@@ -27,7 +27,7 @@
     文字が アルファベット で有る限りバッファします。"
    (read-while source #'isident))
 
-(defun read-digits(source)
+(defun read-digit(source)
    "read-while の カバー関数です。
     文字が 数字 で有る限りバッファします。"
    (read-while source #'isdigit))
@@ -124,12 +124,12 @@
 (defun-read-once read-colon *colon*)
 (defun-read-once read-semi-colon *semi-colon*)
 (defun-read-once read-dot *dot*)
-(defun-read-fusion read-ident+digit #'read-identifier #'read-digits)
+(defun-read-fusion read-ident+digit #'read-identifier #'read-digit)
 (defun-read-string read-public "public:")
 
 (reader-register #'read-identifier)
 (reader-register #'read-public)
-(reader-register #'read-digits)
+(reader-register #'read-digit)
 (reader-register #'read-left-paren)
 (reader-register #'read-right-paren)
 (reader-register #'read-left-brace)
