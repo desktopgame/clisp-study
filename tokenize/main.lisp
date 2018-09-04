@@ -4,8 +4,8 @@
 (ql:quickload :cl-fad)
 
 (defparameter *oridinal_readers* (define-readers
-   #'read-identifier :ident
-   #'read-digit :digit
+   (read-identifier) :ident
+   (read-digit) :digit
 ))
 
 (defun lex-one(input-file output-file)

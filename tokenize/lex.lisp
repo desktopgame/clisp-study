@@ -9,46 +9,47 @@
    (format t "~%"))
 
 
-(defun read-while(source cond)
+(defun read-many(cond)
    "cond に source の先頭から一文字ずつ文字を与えて、
     t を返す限り文字列をバッファします。
     t 以外の値が返されると、その時点のバッファと source から segment を作成して返します。"
-   (let ((c (car source)) (tail (cdr source)) (buf '()) (len 0) (e nil))
-      (loop while (and (not-eq c nil) (funcall cond c)) do
-         (setf e c)
-         (setf c (car tail))
-         (setf tail (cdr tail))
-         (incf len)
-         (push e buf))  (make-segment :chars (nreverse buf)
-                                   :next (make-segment :chars (push c tail))) ))
+   (lambda (source)
+      (let ((c (car source)) (tail (cdr source)) (buf '()) (len 0) (e nil))
+         (loop while (and (not-eq c nil) (funcall cond c)) do
+            (setf e c)
+            (setf c (car tail))
+            (setf tail (cdr tail))
+            (incf len)
+            (push e buf))  (make-segment :chars (nreverse buf)
+                                         :next (make-segment :chars (push c tail))) )))
 
-(defun read-identifier(source)
-   "read-while の カバー関数です。
+(defun read-identifier()
+   "read-many の カバー関数です。
     文字が アルファベット で有る限りバッファします。"
-   (read-while source #'isident))
+   (read-many #'isident))
 
-(defun read-digit(source)
-   "read-while の カバー関数です。
+(defun read-digit()
+   "read-many の カバー関数です。
     文字が 数字 で有る限りバッファします。"
-   (read-while source #'isdigit))
+   (read-many #'isdigit))
 
-(defmacro defun-read-once(name a)
+(defun defun-read-once(name a)
    "`一文字だけ読み取って、それが a と同じなら segment を返す`
     関数を定義するマクロです。"
-    `(defun ,name(source)
-        (if (char= ,a (car source))
+   (lambda (source)
+        (if (char= a (car source))
             (make-segment :chars (list (car source))
                        :next (make-segment :chars (cdr source)))
             (make-segment :chars nil
                        :next (make-segment :chars source)))))
 
-(defmacro defun-read-fusion(name a b)
+(defun defun-read-fusion(name a b)
    "`a の戻り値 seg-a を入力として b を呼び出し、
     両方の chars を連結した新しい segment を返す` 関数を定義するマクロです。"
-   `(defun ,name(source)
-       (let* ((al (funcall ,a source)) (ala (segment-chars al)) (ald (segment-next al)))
+   (lambda (source)
+       (let* ((al (funcall a source)) (ala (segment-chars al)) (ald (segment-next al)))
           (if ala
-             (let* ((bl (funcall ,b  (segment-chars ald))) (bla (segment-chars bl)) (bld (segment-next bl)))
+             (let* ((bl (funcall b  (segment-chars ald))) (bla (segment-chars bl)) (bld (segment-next bl)))
                 (make-segment :chars (append ala bla)
                            :next (make-segment :chars bld))
              )
@@ -66,12 +67,12 @@
            source)
         source))
 
-(defmacro defun-read-word(name word)
+(defun defun-read-word(name word)
    "`word という文字列との前方一致によって segment を返す` 関数を定義するマクロです。"
-   `(defun ,name(source)
-       (let ((tail (scan-word source ,word)))
-          (if (= (+ (length ,word) (length tail)) (length source))
-              (make-segment :chars ,word
+   (lambda (source)
+       (let ((tail (scan-word source word)))
+          (if (= (+ (length word) (length tail)) (length source))
+              (make-segment :chars word
                             :next (make-segment :chars tail))
               (make-segment :chars nil
                             :next (make-segment :chars source))
